@@ -29,6 +29,10 @@ $defenderBackupPath = Join-Path $workRoot 'SecurityToggle-Backup.json'
 $runOncePath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce'
 $runOnceName = 'HyperVOffConsole'
 
+# Create the data folder up front: the Testing page writes here even if the
+# engine has never run, and Set-Content cannot create intermediate directories.
+try { New-Item -ItemType Directory -Path $workRoot -Force -ErrorAction Stop | Out-Null } catch { }
+
 if (-not (Test-Path -LiteralPath $enginePath)) {
     [System.Windows.MessageBox]::Show(
         "One of the PowerShell files is missing:`n$enginePath`n`nKeep both PowerShell files together in the same folder.",
@@ -640,12 +644,22 @@ function Convert-ToActivityItem {
         'Error'   { @('#FF7A6E','#231312','#4C2622') }
         default   { @('#9AA5B1','#12171E','#27303B') }
     }
-    $hasAction = -not [string]::IsNullOrWhiteSpace("$($Event.ActionRequired)")
+    $hasAction = $false
+    if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) {
+        $hasAction = -not [string]::IsNullOrWhiteSpace("$($Event.ActionRequired)")
+    }
+    $parsedTime = Get-Date
+    if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) {
+        try { $parsedTime = [datetime]$Event.Timestamp } catch { }
+    }
+    $messageText = if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) { "$($Event.Message)" } else { "$($Event)" }
+    $levelText = if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) { "$($Event.Level)" } else { 'Info' }
+    $actionText = if ($hasAction) { "$($Event.ActionRequired)" } else { '' }
     [pscustomobject]@{
-        Time             = ([datetime]$Event.Timestamp).ToLocalTime().ToString('HH:mm:ss')
-        Level            = "$($Event.Level)".ToUpperInvariant()
-        Message          = "$($Event.Message)"
-        Action           = "$($Event.ActionRequired)"
+        Time             = $parsedTime.ToLocalTime().ToString('HH:mm:ss')
+        Level            = $levelText.ToUpperInvariant()
+        Message          = $messageText
+        Action           = $actionText
         ActionVisibility = if ($hasAction) { [Windows.Visibility]::Visible } else { [Windows.Visibility]::Collapsed }
         Accent           = [Windows.Media.SolidColorBrush]::new([Windows.Media.ColorConverter]::ConvertFromString($palette[0]))
         Background       = [Windows.Media.SolidColorBrush]::new([Windows.Media.ColorConverter]::ConvertFromString($palette[1]))
@@ -656,10 +670,12 @@ function Convert-ToActivityItem {
 function Refresh-Activity {
     $events = @(Get-OperationalEvents)
     $filter = if ($ActionFilter.IsChecked) { 1 } elseif ($FailureFilter.IsChecked) { 2 } else { 0 }
-    if ($filter -eq 1) { $events = @($events | Where-Object { -not [string]::IsNullOrWhiteSpace("$($_.ActionRequired)") }) }
+    if ($filter -eq 1) { $events = @($events | Where-Object { $_.PSObject.Properties.Match('').Count -gt 0 -and -not [string]::IsNullOrWhiteSpace("$($_.ActionRequired)") }) }
     if ($filter -eq 2) { $events = @($events | Where-Object Level -eq 'Error') }
     $events = @($events | Select-Object -Last 120)
-    $signature = if ($events.Count) { "$($events.Count)|$($events[-1].Timestamp)|$filter" } else { "0||$filter" }
+    $lastEvent = if ($events.Count) { $events[-1] } else { $null }
+    $lastStamp = if ($null -ne $lastEvent -and $lastEvent.PSObject.Properties.Match('').Count -gt 0) { "$($lastEvent.Timestamp)" } else { '' }
+    $signature = if ($events.Count) { "$($events.Count)|$lastStamp|$filter" } else { "0||$filter" }
     if ($signature -eq $script:lastEventSignature) { return }
     $script:lastEventSignature = $signature
     $ActivityList.ItemsSource = @($events | ForEach-Object { Convert-ToActivityItem $_ })
@@ -670,7 +686,7 @@ function Test-HypervisorAlreadyOff {
     # True only when we can positively confirm: no hypervisor running AND VBS off.
     try {
         $system = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
-        if ($system.PSObject.Properties.Name -contains 'HypervisorPresent') {
+        if ($system.PSObject.Properties.Match('').Count -gt 0) {
             if ([bool]$system.HypervisorPresent) { return $false }
         }
         else { return $false }
@@ -689,7 +705,7 @@ function Read-LiveStatus {
     $vbsOff = $false
     try {
         $system = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
-        $hypervisor = if ($system.PSObject.Properties.Name -contains 'HypervisorPresent') { [bool]$system.HypervisorPresent } else { $null }
+        $hypervisor = if ($system.PSObject.Properties.Match('').Count -gt 0) { [bool]$system.HypervisorPresent } else { $null }
         $HypervisorCheck.Text = if ($null -eq $hypervisor) { 'Unknown' } elseif ($hypervisor) { 'Running' } else { 'Stopped' }
         $HypervisorCheck.Foreground = if ($hypervisor) { '#FF7A6E' } elseif ($null -ne $hypervisor) { '#43D9A3' } else { '#C4D2E4' }
         $ManagedCheck.Text = if ($system.PartOfDomain) { 'Work or school' } else { 'This PC' }
@@ -722,7 +738,7 @@ function Read-LiveStatus {
     }
 
     $OpenFilesButton.IsEnabled = (Test-Path -LiteralPath $workRoot) -or (Test-Path -LiteralPath $reportPath)
-    $stateCompleted = $null -ne $state -and ($state.PSObject.Properties.Name -contains 'Completed') -and [bool]$state.Completed
+    $stateCompleted = $null -ne $state -and ($state.PSObject.Properties.Match('').Count -gt 0) -and [bool]$state.Completed
 
     if ($engineBusy) {
         $HeaderStatus.Text = 'WORKING'
@@ -752,7 +768,7 @@ function Read-LiveStatus {
     }
 
     if ($taskExists) {
-        $attemptText = if ($null -ne $state -and ($state.PSObject.Properties.Name -contains 'Attempt')) { "$($state.Attempt)" } else { '?' }
+        $attemptText = if ($null -ne $state -and ($state.PSObject.Properties.Match('').Count -gt 0)) { "$($state.Attempt)" } else { '?' }
         $LastRunCheck.Text = "Restart $attemptText of 2"
         $HeaderStatus.Text = 'RUNNING'
         $StatusKicker.Text = 'IN PROGRESS'
@@ -765,7 +781,7 @@ function Read-LiveStatus {
         return
     }
 
-    if ($null -ne $state -and $stateCompleted -eq $false -and ($state.PSObject.Properties.Name -contains 'Completed')) {
+    if ($null -ne $state -and $stateCompleted -eq $false -and ($state.PSObject.Properties.Match('').Count -gt 0)) {
         # A previous run ended without completing: surface it instead of looking fresh.
         $LastRunCheck.Text = 'Incomplete'
         $HeaderStatus.Text = 'ATTENTION'
@@ -795,8 +811,15 @@ function Set-ReopenAfterSignIn {
     if (-not $ReopenToggle.IsChecked) { Remove-StartupReopen; return }
     if (Test-HypervisorAlreadyOff) { Remove-StartupReopen; return }
     $command = '"{0}" -NoProfile -STA -ExecutionPolicy Bypass -File "{1}" -Resume' -f $windowsPowerShell, $PSCommandPath
-    New-Item -Path $runOncePath -Force | Out-Null
-    New-ItemProperty -Path $runOncePath -Name $runOnceName -PropertyType String -Value $command -Force | Out-Null
+    try {
+        New-Item -Path $runOncePath -Force -ErrorAction Stop | Out-Null
+        New-ItemProperty -Path $runOncePath -Name $runOnceName -PropertyType String -Value $command -Force -ErrorAction Stop | Out-Null
+    }
+    catch {
+        Add-UiEvent -Level Warning -Code 'REOPEN_ARM_FAILED' `
+            -Message "Could not schedule the app to reopen after sign-in: $($_.Exception.Message)" `
+            -ActionRequired 'After the restart, open this tool manually from the same folder. The disablement itself continues automatically.'
+    }
 }
 
 function Start-Engine {
@@ -859,7 +882,15 @@ function Save-ServiceStartBackup {
         } catch { }
     }
     if ($backup.Count) {
-        $backup | ConvertTo-Json | Set-Content -LiteralPath $defenderBackupPath -Encoding UTF8
+        try {
+            New-Item -ItemType Directory -Path $workRoot -Force -ErrorAction Stop | Out-Null
+            $backup | ConvertTo-Json | Set-Content -LiteralPath $defenderBackupPath -Encoding UTF8
+        }
+        catch {
+            Add-UiEvent -Level Warning -Code 'DEFENDER_BACKUP_SAVE_FAILED' `
+                -Message "Could not save the Defender service start-value backup: $($_.Exception.Message)" `
+                -ActionRequired 'Restore Windows Security will fall back to default start values. Check permissions on C:\ProgramData\Disable-HyperV-Fully.'
+        }
     }
 }
 
@@ -916,7 +947,7 @@ function Invoke-WindowsSecurityChange {
             try { Stop-Service -Name $service -Force -ErrorAction SilentlyContinue } catch { }
         }
         foreach ($driver in @('WdFilter','WdBoot')) {
-            & sc.exe stop $driver | Out-Null
+            & sc.exe stop $driver 2>&1 | Out-Null
         }
         foreach ($name in $defenderServices) {
             [void](Restore-TamperSafeRegistryValue -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$name" -Name 'Start' -Value 4)
@@ -997,7 +1028,11 @@ $DefenderDisableButton.Add_Click({
     $DefenderDisableButton.IsEnabled = $false
     $DefenderEnableButton.IsEnabled = $false
     $window.Cursor = [Windows.Input.Cursors]::Wait
-    try { Invoke-WindowsSecurityChange -Mode 'Disable' } finally {
+    try { Invoke-WindowsSecurityChange -Mode 'Disable' } catch {
+        Add-UiEvent -Level Error -Code 'DEFENDER_DISABLE_FAILED' `
+            -Message "Windows Security could not be fully disabled: $($_.Exception.Message)" `
+            -ActionRequired 'Turn off Tamper Protection in Windows Security first, then try again. The Log has the technical detail.'
+    } finally {
         $window.Cursor = $null
         $DefenderDisableButton.IsEnabled = $true
         $DefenderEnableButton.IsEnabled = $true
@@ -1008,7 +1043,11 @@ $DefenderEnableButton.Add_Click({
     $DefenderDisableButton.IsEnabled = $false
     $DefenderEnableButton.IsEnabled = $false
     $window.Cursor = [Windows.Input.Cursors]::Wait
-    try { Invoke-WindowsSecurityChange -Mode 'Enable' } finally {
+    try { Invoke-WindowsSecurityChange -Mode 'Enable' } catch {
+        Add-UiEvent -Level Error -Code 'DEFENDER_ENABLE_FAILED' `
+            -Message "Windows Security could not be fully restored: $($_.Exception.Message)" `
+            -ActionRequired 'Restart the PC and use Restore Windows Security again. The Log has the technical detail.'
+    } finally {
         $window.Cursor = $null
         $DefenderDisableButton.IsEnabled = $true
         $DefenderEnableButton.IsEnabled = $true
@@ -1050,7 +1089,7 @@ $timer.Add_Tick({
     if (($script:defenderTickCounter % 5) -eq 0) { Update-DefenderStatusUI | Out-Null }
     if ($Resume) {
         $state = Get-CurrentState
-        $stillWorking = $null -ne $state -and -not ($state.PSObject.Properties.Name -contains 'Completed')
+        $stillWorking = $null -ne $state -and -not ($state.PSObject.Properties.Match('').Count -gt 0)
         if ($stillWorking -and -not (Test-HypervisorAlreadyOff)) {
             Set-ReopenAfterSignIn
         }
@@ -1069,4 +1108,5 @@ Read-LiveStatus
 Update-DefenderStatusUI | Out-Null
 $timer.Start()
 [void]$window.ShowDialog()
+
 

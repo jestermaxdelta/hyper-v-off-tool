@@ -1,4 +1,4 @@
-#requires -version 5.1
+﻿#requires -version 5.1
 <#
 .SYNOPSIS
 Disables the Microsoft hypervisor, Hyper-V/VBS consumers, Credential Guard,
@@ -667,7 +667,7 @@ function Get-DisablementStatus {
     catch { }
 
     $hypervisorPresent = $false
-    if ($computerSystem.PSObject.Properties.Name -contains 'HypervisorPresent') {
+    if ($computerSystem.PSObject.Properties.Match('').Count -gt 0) {
         $hypervisorPresent = [bool]$computerSystem.HypervisorPresent
     }
 
@@ -679,7 +679,7 @@ function Get-DisablementStatus {
     }
 
     $firmwareVirtualization = @($processors | ForEach-Object {
-        if ($_.PSObject.Properties.Name -contains 'VirtualizationFirmwareEnabled') {
+        if ($_.PSObject.Properties.Match('').Count -gt 0) {
             $_.VirtualizationFirmwareEnabled
         }
     } | Select-Object -Unique)
@@ -729,10 +729,10 @@ function Write-StatusReport {
     $restorePointText = 'Not created (verification-only run)'
     $backupText = 'Not created (verification-only run)'
     if ($null -ne $State) {
-        if ($State.PSObject.Properties.Name -contains 'RestorePointDescription') {
+        if ($State.PSObject.Properties.Match('').Count -gt 0) {
             $restorePointText = '{0} (sequence {1})' -f $State.RestorePointDescription, $State.RestorePointSequenceNumber
         }
-        if ($State.PSObject.Properties.Name -contains 'BackupDirectory') {
+        if ($State.PSObject.Properties.Match('').Count -gt 0) {
             $backupText = "$($State.BackupDirectory)"
         }
     }
@@ -860,7 +860,7 @@ try {
     if ($ContinueAfterRestart) {
         Start-Sleep -Seconds 15
         $state = Load-State
-        if ($state.PSObject.Properties.Name -contains 'RunId') { $script:RunId = "$($state.RunId)" }
+        if ($state.PSObject.Properties.Match('').Count -gt 0) { $script:RunId = "$($state.RunId)" }
         Write-Log "Continuation started after restart; attempt $($state.Attempt) of 2."
         Add-OperationalEvent -Level Info -Code 'CONTINUATION_STARTED' `
             -Message "Resumed automatically after restart for verification attempt $($state.Attempt) of 2."
@@ -989,3 +989,4 @@ catch {
     }
     throw
 }
+

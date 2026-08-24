@@ -5,3 +5,7 @@ work/
 # OS / editor noise
 Thumbs.db
 desktop.ini
+
+# Not part of the project
+AGENTS.md
+*.png
