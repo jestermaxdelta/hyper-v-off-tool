@@ -1,0 +1,7 @@
+# Build artifacts and working files
+work/
+*.zip
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
