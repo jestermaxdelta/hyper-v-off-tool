@@ -645,15 +645,15 @@ function Convert-ToActivityItem {
         default   { @('#9AA5B1','#12171E','#27303B') }
     }
     $hasAction = $false
-    if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) {
+    if ($null -ne $Event -and $Event.PSObject.Properties.Match('ActionRequired').Count -gt 0) {
         $hasAction = -not [string]::IsNullOrWhiteSpace("$($Event.ActionRequired)")
     }
     $parsedTime = Get-Date
-    if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) {
+    if ($null -ne $Event -and $Event.PSObject.Properties.Match('Timestamp').Count -gt 0) {
         try { $parsedTime = [datetime]$Event.Timestamp } catch { }
     }
-    $messageText = if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) { "$($Event.Message)" } else { "$($Event)" }
-    $levelText = if ($null -ne $Event -and $Event.PSObject.Properties.Match('').Count -gt 0) { "$($Event.Level)" } else { 'Info' }
+    $messageText = if ($null -ne $Event -and $Event.PSObject.Properties.Match('Message').Count -gt 0) { "$($Event.Message)" } else { "$($Event)" }
+    $levelText = if ($null -ne $Event -and $Event.PSObject.Properties.Match('Level').Count -gt 0) { "$($Event.Level)" } else { 'Info' }
     $actionText = if ($hasAction) { "$($Event.ActionRequired)" } else { '' }
     [pscustomobject]@{
         Time             = $parsedTime.ToLocalTime().ToString('HH:mm:ss')
@@ -670,11 +670,11 @@ function Convert-ToActivityItem {
 function Refresh-Activity {
     $events = @(Get-OperationalEvents)
     $filter = if ($ActionFilter.IsChecked) { 1 } elseif ($FailureFilter.IsChecked) { 2 } else { 0 }
-    if ($filter -eq 1) { $events = @($events | Where-Object { $_.PSObject.Properties.Match('').Count -gt 0 -and -not [string]::IsNullOrWhiteSpace("$($_.ActionRequired)") }) }
+    if ($filter -eq 1) { $events = @($events | Where-Object { $_.PSObject.Properties.Match('ActionRequired').Count -gt 0 -and -not [string]::IsNullOrWhiteSpace("$($_.ActionRequired)") }) }
     if ($filter -eq 2) { $events = @($events | Where-Object Level -eq 'Error') }
     $events = @($events | Select-Object -Last 120)
     $lastEvent = if ($events.Count) { $events[-1] } else { $null }
-    $lastStamp = if ($null -ne $lastEvent -and $lastEvent.PSObject.Properties.Match('').Count -gt 0) { "$($lastEvent.Timestamp)" } else { '' }
+    $lastStamp = if ($null -ne $lastEvent -and $lastEvent.PSObject.Properties.Match('Timestamp').Count -gt 0) { "$($lastEvent.Timestamp)" } else { '' }
     $signature = if ($events.Count) { "$($events.Count)|$lastStamp|$filter" } else { "0||$filter" }
     if ($signature -eq $script:lastEventSignature) { return }
     $script:lastEventSignature = $signature
@@ -686,7 +686,7 @@ function Test-HypervisorAlreadyOff {
     # True only when we can positively confirm: no hypervisor running AND VBS off.
     try {
         $system = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
-        if ($system.PSObject.Properties.Match('').Count -gt 0) {
+        if ($system.PSObject.Properties.Match('HypervisorPresent').Count -gt 0) {
             if ([bool]$system.HypervisorPresent) { return $false }
         }
         else { return $false }
@@ -705,7 +705,7 @@ function Read-LiveStatus {
     $vbsOff = $false
     try {
         $system = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
-        $hypervisor = if ($system.PSObject.Properties.Match('').Count -gt 0) { [bool]$system.HypervisorPresent } else { $null }
+        $hypervisor = if ($system.PSObject.Properties.Match('HypervisorPresent').Count -gt 0) { [bool]$system.HypervisorPresent } else { $null }
         $HypervisorCheck.Text = if ($null -eq $hypervisor) { 'Unknown' } elseif ($hypervisor) { 'Running' } else { 'Stopped' }
         $HypervisorCheck.Foreground = if ($hypervisor) { '#FF7A6E' } elseif ($null -ne $hypervisor) { '#43D9A3' } else { '#C4D2E4' }
         $ManagedCheck.Text = if ($system.PartOfDomain) { 'Work or school' } else { 'This PC' }
@@ -738,7 +738,7 @@ function Read-LiveStatus {
     }
 
     $OpenFilesButton.IsEnabled = (Test-Path -LiteralPath $workRoot) -or (Test-Path -LiteralPath $reportPath)
-    $stateCompleted = $null -ne $state -and ($state.PSObject.Properties.Match('').Count -gt 0) -and [bool]$state.Completed
+    $stateCompleted = $null -ne $state -and ($state.PSObject.Properties.Match('Completed').Count -gt 0) -and [bool]$state.Completed
 
     if ($engineBusy) {
         $HeaderStatus.Text = 'WORKING'
@@ -768,7 +768,7 @@ function Read-LiveStatus {
     }
 
     if ($taskExists) {
-        $attemptText = if ($null -ne $state -and ($state.PSObject.Properties.Match('').Count -gt 0)) { "$($state.Attempt)" } else { '?' }
+        $attemptText = if ($null -ne $state -and ($state.PSObject.Properties.Match('Attempt').Count -gt 0)) { "$($state.Attempt)" } else { '?' }
         $LastRunCheck.Text = "Restart $attemptText of 2"
         $HeaderStatus.Text = 'RUNNING'
         $StatusKicker.Text = 'IN PROGRESS'
@@ -781,7 +781,7 @@ function Read-LiveStatus {
         return
     }
 
-    if ($null -ne $state -and $stateCompleted -eq $false -and ($state.PSObject.Properties.Match('').Count -gt 0)) {
+    if ($null -ne $state -and $stateCompleted -eq $false -and ($state.PSObject.Properties.Match('Started').Count -gt 0)) {
         # A previous run ended without completing: surface it instead of looking fresh.
         $LastRunCheck.Text = 'Incomplete'
         $HeaderStatus.Text = 'ATTENTION'
@@ -1089,7 +1089,7 @@ $timer.Add_Tick({
     if (($script:defenderTickCounter % 5) -eq 0) { Update-DefenderStatusUI | Out-Null }
     if ($Resume) {
         $state = Get-CurrentState
-        $stillWorking = $null -ne $state -and -not ($state.PSObject.Properties.Match('').Count -gt 0)
+        $stillWorking = $null -ne $state -and -not ($state.PSObject.Properties.Match('Completed').Count -gt 0)
         if ($stillWorking -and -not (Test-HypervisorAlreadyOff)) {
             Set-ReopenAfterSignIn
         }
