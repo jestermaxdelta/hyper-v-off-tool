@@ -326,6 +326,10 @@ try {
     $newEvents = @(Get-OperationalEvents | Select-Object -Skip $before)
     $newEvents | ForEach-Object { Write-Host "  event: [$($_.Level)] $($_.Code) - $($_.Message) | $($_.ActionRequired)" }
     Assert-That ($newEvents.Count -gt 0) 'real run: produced events'
+    $failed = @($newEvents | Where-Object { $_.Code -eq 'WORKFLOW_FAILED' })
+    if ((Get-CimInstance Win32_OperatingSystem).ProductType -ne 1) {
+        Assert-That ($failed.Count -eq 1 -and $failed[0].ActionRequired -like '*Windows 10 or Windows 11*') 'real run: server stops at restore-point gate with the right advice'
+    }
     Assert-That (-not (Get-ItemProperty -LiteralPath $runOncePath -Name $runOnceName -ErrorAction SilentlyContinue)) 'real run: no sign-in reopen when the toggle is off'
     Assert-That ($null -eq (ScheduledTasks\Get-ScheduledTask -TaskName $continuationTaskName -ErrorAction SilentlyContinue) -or ($newEvents | Where-Object { $_.Code -eq 'MANUAL_RESTART_REQUIRED' })) 'real run: no stray continuation task after a failure'
     $script:lastEventSignature = ''
