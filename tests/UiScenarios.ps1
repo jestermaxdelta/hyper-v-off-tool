@@ -50,6 +50,38 @@ function Save-Shot {
     Write-Host "shot: $Name.png"
 }
 
+function Get-Descendants {
+    param($Root)
+    $list = New-Object System.Collections.ArrayList
+    $queue = New-Object System.Collections.Queue
+    $queue.Enqueue($Root)
+    while ($queue.Count) {
+        $node = $queue.Dequeue()
+        [void]$list.Add($node)
+        $count = 0
+        try { $count = [Windows.Media.VisualTreeHelper]::GetChildrenCount($node) } catch { }
+        for ($i = 0; $i -lt $count; $i++) { $queue.Enqueue([Windows.Media.VisualTreeHelper]::GetChild($node, $i)) }
+    }
+    return $list
+}
+
+function Get-TextColor {
+    param($Root, [string] $Text)
+    $block = Get-Descendants $Root | Where-Object { $_ -is [Windows.Controls.TextBlock] -and $_.Text -eq $Text } | Select-Object -First 1
+    if ($null -eq $block) { return '' }
+    return $block.Foreground.Color.ToString()
+}
+
+function Test-FullyInside {
+    # True when the element is laid out entirely inside the given ancestor.
+    param($Element, $Ancestor)
+    if (-not $Element.IsVisible) { return $true }
+    $origin = $Element.TransformToAncestor($Ancestor).Transform((New-Object Windows.Point 0, 0))
+    return ($origin.X -ge -0.5 -and $origin.Y -ge -0.5 -and
+            ($origin.X + $Element.ActualWidth) -le ($Ancestor.ActualWidth + 0.5) -and
+            ($origin.Y + $Element.ActualHeight) -le ($Ancestor.ActualHeight + 0.5))
+}
+
 function Invoke-Click {
     param($Button)
     $Button.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Primitives.ButtonBase]::ClickEvent)))
@@ -137,12 +169,17 @@ try {
     Write-TestEvents @()
     Set-Scenario (New-Snap $true 2)
     Show-Panel -Name 'Overview'
-    Assert-That ($StatusTitle.Text -eq 'Ready to turn off Hyper-V.') 'ready: title'
+    Assert-That ($StatusTitle.Text -eq 'Ready when you are.') 'ready: title'
     Assert-That ($RunButton.IsEnabled -and "$($RunButton.Content)" -eq 'Turn off Hyper-V') 'ready: run button enabled'
     Assert-That ($HypervisorCheck.Text -eq 'Running' -and $VbsCheck.Text -eq 'Running') 'ready: live values'
     Assert-That ($HeaderStatus.Text -eq 'READY') 'ready: pill'
     Assert-That ($ActivityEmpty.Visibility -eq 'Visible') 'ready: empty log state'
     Save-Shot '01-overview-ready'
+    Write-Host "window size: $($window.ActualWidth) x $($window.ActualHeight) (work area $([Windows.SystemParameters]::WorkArea))"
+    Assert-That ($window.ActualWidth -le [Windows.SystemParameters]::WorkArea.Width + 1 -and $window.ActualHeight -le [Windows.SystemParameters]::WorkArea.Height + 1) 'layout: window fits the screen work area'
+    Assert-That (Test-FullyInside $RunButton $window) 'layout: run button fully visible'
+    Assert-That (Test-FullyInside $VerifyButton $window) 'layout: check button fully visible'
+    Assert-That ($StatusTitle.ActualHeight -lt 60) 'layout: hero title fits on one line'
 
     # 2. Confirm flow (regression: refresh must not revert the armed button)
     Invoke-Click $RunButton
@@ -219,6 +256,11 @@ try {
     Assert-That (@($ActivityList.ItemsSource).Count -eq 5) 'log: all 5 entries'
     Assert-That ("$(@($ActivityList.ItemsSource)[0].Message)" -like 'Verification failed*') 'log: newest first'
     Save-Shot '06-log-all'
+    Assert-That ((Get-TextColor $ActivityList 'FAILED') -eq '#FFFF6B81') 'log: FAILED label is rendered red'
+    Assert-That ((Get-TextColor $ActivityList 'WARNING') -eq '#FFF5B94F') 'log: WARNING label is rendered amber'
+    Assert-That ((Get-TextColor $ActivityList 'SUCCESS') -eq '#FF4ADE9B') 'log: SUCCESS label is rendered green'
+    $firstCard = Get-Descendants $ActivityList | Where-Object { $_ -is [Windows.Controls.Border] -and $_.CornerRadius.TopLeft -eq 12 } | Select-Object -First 1
+    Assert-That ($null -ne $firstCard -and "$($firstCard.Background.Color)" -eq '#FF170C11') 'log: card background is bound'
     $ActionFilter.IsChecked = $true
     Assert-That (@($ActivityList.ItemsSource).Count -eq 3) 'log: needs-attention filter'
     $FailureFilter.IsChecked = $true
@@ -337,6 +379,13 @@ try {
     Read-LiveStatus
     Show-Panel -Name 'Overview'
     Save-Shot '12-overview-after-real-run'
+    $heroScroller = Get-Descendants $OverviewPanel | Where-Object { $_ -is [Windows.Controls.ScrollViewer] } | Select-Object -First 1
+    foreach ($button in @($VerifyButton, $OpenFilesButton, $OpenReportButton)) {
+        if ($button.IsVisible) {
+            $origin = $button.TransformToAncestor($heroScroller).Transform((New-Object Windows.Point 0, 0))
+            Assert-That (($origin.X + $button.ActualWidth) -le ($heroScroller.ActualWidth + 0.5)) "layout: hero button '$($button.Content.Children[1].Text)' is not cut off on the right"
+        }
+    }
     Show-Panel -Name 'Activity'
     Save-Shot '13-log-after-real-run'
     $logFile = Join-Path $workRoot 'Disable-HyperV-Fully.log'
