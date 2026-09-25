@@ -54,7 +54,7 @@ if (-not (Test-Path -LiteralPath $enginePath)) {
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hyper-V Off Tool" Width="1200" Height="820"
-        MinWidth="1080" MinHeight="740" WindowStartupLocation="CenterScreen"
+        MinWidth="940" MinHeight="640" WindowStartupLocation="CenterScreen"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="CanMinimize"
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" Foreground="#F4EEF8"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
@@ -610,7 +610,8 @@ if (-not (Test-Path -LiteralPath $enginePath)) {
                       </RadialGradientBrush>
                     </Border.OpacityMask>
                   </Border>
-                  <Grid Margin="30,28,30,26">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,4,0">
+                  <Grid Margin="30,28,26,26">
                     <Grid.RowDefinitions>
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="*"/>
@@ -618,7 +619,7 @@ if (-not (Test-Path -LiteralPath $enginePath)) {
                     </Grid.RowDefinitions>
                     <StackPanel>
                       <TextBlock x:Name="StatusKicker" Text="BEFORE YOU START" Style="{StaticResource Kicker}"/>
-                      <TextBlock x:Name="StatusTitle" Text="Ready to check this PC." Style="{StaticResource PageTitle}" FontSize="32" Margin="0,10,0,0" TextWrapping="Wrap" LineHeight="38"/>
+                      <TextBlock x:Name="StatusTitle" Text="Ready when you are." Style="{StaticResource PageTitle}" FontSize="32" Margin="0,10,0,0" TextWrapping="Wrap" LineHeight="38"/>
                       <TextBlock x:Name="StatusSubtitle" Text="First we check what is running. Nothing changes until you start." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,10,0,0" MaxWidth="520" HorizontalAlignment="Left" LineHeight="20"/>
                     </StackPanel>
 
@@ -662,18 +663,19 @@ if (-not (Test-Path -LiteralPath $enginePath)) {
                       <TextBlock x:Name="Step4State" Grid.Row="3" Grid.Column="2" Text="" FontSize="11" FontWeight="SemiBold" Margin="0,10,0,0" Foreground="#85798F"/>
                     </Grid>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal">
-                      <Button x:Name="VerifyButton" Style="{StaticResource GhostButton}" ToolTip="Read-only check. Nothing on the PC is changed.">
+                    <WrapPanel Grid.Row="2" Margin="0,0,0,-10">
+                      <Button x:Name="VerifyButton" Margin="0,0,10,10" Style="{StaticResource GhostButton}" ToolTip="Read-only check. Nothing on the PC is changed.">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/><TextBlock Text="Check this PC"/></StackPanel>
                       </Button>
-                      <Button x:Name="OpenFilesButton" Style="{StaticResource GhostButton}" Margin="10,0,0,0">
+                      <Button x:Name="OpenFilesButton" Style="{StaticResource GhostButton}" Margin="0,0,10,10">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE838;" FontFamily="{StaticResource IconFont}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/><TextBlock Text="Open log folder"/></StackPanel>
                       </Button>
-                      <Button x:Name="OpenReportButton" Style="{StaticResource GhostButton}" Margin="10,0,0,0" Visibility="Collapsed">
+                      <Button x:Name="OpenReportButton" Style="{StaticResource GhostButton}" Margin="0,0,10,10" Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A5;" FontFamily="{StaticResource IconFont}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/><TextBlock Text="Final report"/></StackPanel>
                       </Button>
-                    </StackPanel>
+                    </WrapPanel>
                   </Grid>
+                  </ScrollViewer>
                 </Grid>
               </Border>
 
@@ -995,7 +997,7 @@ function Get-Brush {
     return $script:brushCache[$Hex]
 }
 
-$tone = @{
+$toneColors = @{
     Good    = '#4ADE9B'
     Warn    = '#F5B94F'
     Bad     = '#FF6B81'
@@ -1007,7 +1009,7 @@ $tone = @{
 function Set-Value {
     param($Control, [string] $Text, [ValidateSet('Good','Warn','Bad','Accent','Neutral','Muted')][string] $Tone = 'Neutral')
     $Control.Text = $Text
-    $Control.Foreground = Get-Brush $tone[$Tone]
+    $Control.Foreground = Get-Brush $toneColors[$Tone]
 }
 
 function Set-HeaderPill {
@@ -1194,12 +1196,14 @@ function Convert-ToActivityItem {
         Message          = "$($Item.Message)"
         Action           = if ($hasAction) { "$($Item.ActionRequired)" } else { '' }
         ActionVisibility = if ($hasAction) { [Windows.Visibility]::Visible } else { [Windows.Visibility]::Collapsed }
-        Accent           = Get-Brush $palette[0]
-        Background       = Get-Brush $palette[1]
-        Stroke           = Get-Brush $palette[2]
-        IconBackground   = Get-Brush $palette[3]
+        Accent           = [Windows.Media.Brush](Get-Brush $palette[0])
+        Background       = [Windows.Media.Brush](Get-Brush $palette[1])
+        Stroke           = [Windows.Media.Brush](Get-Brush $palette[2])
+        IconBackground   = [Windows.Media.Brush](Get-Brush $palette[3])
         Glyph            = [string]$palette[4]
     }
+    # Brushes are cast above: function output arrives wrapped in PSObject,
+    # which WPF data binding cannot convert to a Brush.
 }
 
 function Refresh-Activity {
@@ -1329,7 +1333,7 @@ function Read-LiveStatus {
         Disarm-Confirmation
         Set-HeaderPill 'WORKING' 'Accent'
         $LastRunCheck.Text = 'In progress'
-        $LastRunCheck.Foreground = Get-Brush $tone.Accent
+        $LastRunCheck.Foreground = Get-Brush $toneColors.Accent
         if ($script:engineMode -eq 'Verify') {
             $StatusKicker.Text = 'CHECKING'
             $StatusTitle.Text = 'Checking this PC.'
@@ -1352,7 +1356,7 @@ function Read-LiveStatus {
     if ($alreadyOff -or $stateCompleted) {
         Disarm-Confirmation
         $LastRunCheck.Text = if ($stateCompleted) { 'Finished' } elseif ($null -ne $state) { 'Earlier run' } else { 'Never' }
-        $LastRunCheck.Foreground = Get-Brush $(if ($stateCompleted) { $tone.Good } else { $tone.Neutral })
+        $LastRunCheck.Foreground = Get-Brush $(if ($stateCompleted) { $toneColors.Good } else { $toneColors.Neutral })
         if ($alreadyOff) {
             Set-HeaderPill 'OFF' 'Good'
             $StatusKicker.Text = 'ALL CLEAR'
@@ -1394,7 +1398,7 @@ function Read-LiveStatus {
     if ($taskExists) {
         Disarm-Confirmation
         $LastRunCheck.Text = "Restart $attempt of 2"
-        $LastRunCheck.Foreground = Get-Brush $tone.Accent
+        $LastRunCheck.Foreground = Get-Brush $toneColors.Accent
         Set-HeaderPill 'RESTARTING' 'Accent'
         $StatusKicker.Text = 'IN PROGRESS'
         if ($restartPending) {
@@ -1416,7 +1420,7 @@ function Read-LiveStatus {
     if ($null -ne $state -and (Test-HasProperty $state 'Attempt')) {
         # A previous run ended without completing: surface it instead of looking fresh.
         $LastRunCheck.Text = 'Incomplete'
-        $LastRunCheck.Foreground = Get-Brush $tone.Warn
+        $LastRunCheck.Foreground = Get-Brush $toneColors.Warn
         Set-HeaderPill 'ATTENTION' 'Warn'
         $StatusKicker.Text = 'NEEDS ATTENTION'
         $StatusTitle.Text = 'The last run did not finish.'
@@ -1433,9 +1437,9 @@ function Read-LiveStatus {
 
     Set-HeaderPill 'READY' 'Accent'
     $LastRunCheck.Text = if ($null -ne $state) { 'Earlier run' } else { 'Never' }
-    $LastRunCheck.Foreground = Get-Brush $tone.Neutral
+    $LastRunCheck.Foreground = Get-Brush $toneColors.Neutral
     $StatusKicker.Text = 'BEFORE YOU START'
-    $StatusTitle.Text = 'Ready to turn off Hyper-V.'
+    $StatusTitle.Text = 'Ready when you are.'
     $StatusSubtitle.Text = 'Nothing changes until you start. Save your work and make sure you know your account password; the PIN will be turned off.'
     Set-Steps @('Pending','Pending','Pending','Pending')
     if (-not $script:confirmationArmed) {
@@ -1548,7 +1552,7 @@ function Update-DefenderStatusUI {
     Set-Value $DefRtValue "$($d.RealTimeProtection)" $(if ($d.RealTimeProtection -eq 'On') { 'Good' } elseif ($d.RealTimeProtection -eq 'Off') { 'Bad' } else { 'Muted' })
     Set-Value $DefSvcValue "$($d.Service)" $(if ($d.Service -eq 'Running') { 'Good' } elseif ($d.Service -eq 'Stopped') { 'Bad' } else { 'Muted' })
     $DefenderNote.Text = if ($d.TamperOn) { 'Tamper Protection is on right now, so most changes will be blocked.' } else { '' }
-    $DefenderNote.Foreground = Get-Brush $tone.Warn
+    $DefenderNote.Foreground = Get-Brush $toneColors.Warn
     return $d
 }
 
@@ -1831,6 +1835,13 @@ $timer.Add_Tick({
 $window.Add_Closed({ $timer.Stop() })
 
 $MachineSubTitle.Text = "$env:COMPUTERNAME  ·  $env:PROCESSOR_ARCHITECTURE  ·  Administrator"
+
+# Fit the window to small or scaled screens instead of letting Windows clip it.
+$workArea = [Windows.SystemParameters]::WorkArea
+$window.Width = [Math]::Max(640, [Math]::Min($window.Width, $workArea.Width))
+$window.Height = [Math]::Max(480, [Math]::Min($window.Height, $workArea.Height))
+$window.MinWidth = [Math]::Min($window.MinWidth, $window.Width)
+$window.MinHeight = [Math]::Min($window.MinHeight, $window.Height)
 
 # Gentle entrance.
 $window.Opacity = 0

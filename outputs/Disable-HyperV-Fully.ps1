@@ -961,7 +961,10 @@ catch {
     Write-Log "FATAL: $($_.Exception.Message)"
     Write-Log $_.ScriptStackTrace
     $failureMessage = $_.Exception.Message
-    $failureAction = if ($failureMessage -like '*Restore point*' -or $failureMessage -like '*System Restore*') {
+    $failureAction = if ($failureMessage -like '*client editions*') {
+        'Run this tool on Windows 10 or Windows 11. Windows Server has no System Restore, so the tool stops before changing anything.'
+    }
+    elseif ($failureMessage -like '*Restore point*' -or $failureMessage -like '*System Restore*') {
         'Open System Protection, enable protection for the OS drive, ensure at least 2 GB is available, then retry.'
     }
     elseif ($failureMessage -like '*BitLocker*') {
