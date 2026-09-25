@@ -41,7 +41,11 @@ Built for Windows PowerShell 5.1 (built into Windows). No dependencies, no insta
 - If **Tamper Protection** is ON, Windows blocks most changes — the tool detects this and tells you, instead of pretending.
 
 ### UI
-- Custom WPF dark theme: gradient canvas, indigo accent with glow CTA, icon navigation, status pills, toggle switches, and a filtered activity log that only shows what matters.
+- Custom WPF theme matched to illusion.cx: aubergine-black canvas with a fuchsia-to-violet glow, heavy display headings, glowing gradient CTA, animated toggles, dark scrollbars and tooltips.
+- **Live progress stepper** (Back up → Turn off → Restart → Verify) that follows the real engine state, plus a colour-coded status pill.
+- **Safer confirm**: the first click opens a confirmation card on Options with a 12-second window; *Cancel* or **Esc** backs out.
+- **Cancel restart** button appears during the 30-second restart warning (runs `shutdown /a`; the tool carries on after your next manual restart).
+- Log shows newest first, with icons, a failure badge in the sidebar, and filter-aware empty states. *Final report* opens `Final-Status.txt` directly.
 - Live status: hypervisor, VBS, domain management, and last-run state, refreshed every 2 seconds.
 
 ---
