@@ -73,6 +73,12 @@ $script:FeatureNames = @(
     'Microsoft-Hyper-V-All'
 )
 
+function Test-HasProperty {
+    # StrictMode-safe property probe; works on objects with zero properties.
+    param($InputObject, [Parameter(Mandatory = $true)][string] $Name)
+    return ($null -ne $InputObject -and $null -ne $InputObject.PSObject.Properties[$Name])
+}
+
 function Test-IsAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
@@ -667,7 +673,7 @@ function Get-DisablementStatus {
     catch { }
 
     $hypervisorPresent = $false
-    if ($computerSystem.PSObject.Properties.Match('').Count -gt 0) {
+    if (Test-HasProperty $computerSystem 'HypervisorPresent') {
         $hypervisorPresent = [bool]$computerSystem.HypervisorPresent
     }
 
@@ -679,7 +685,7 @@ function Get-DisablementStatus {
     }
 
     $firmwareVirtualization = @($processors | ForEach-Object {
-        if ($_.PSObject.Properties.Match('').Count -gt 0) {
+        if (Test-HasProperty $_ 'VirtualizationFirmwareEnabled') {
             $_.VirtualizationFirmwareEnabled
         }
     } | Select-Object -Unique)
@@ -729,10 +735,10 @@ function Write-StatusReport {
     $restorePointText = 'Not created (verification-only run)'
     $backupText = 'Not created (verification-only run)'
     if ($null -ne $State) {
-        if ($State.PSObject.Properties.Match('').Count -gt 0) {
+        if (Test-HasProperty $State 'RestorePointDescription') {
             $restorePointText = '{0} (sequence {1})' -f $State.RestorePointDescription, $State.RestorePointSequenceNumber
         }
-        if ($State.PSObject.Properties.Match('').Count -gt 0) {
+        if (Test-HasProperty $State 'BackupDirectory') {
             $backupText = "$($State.BackupDirectory)"
         }
     }
@@ -860,7 +866,7 @@ try {
     if ($ContinueAfterRestart) {
         Start-Sleep -Seconds 15
         $state = Load-State
-        if ($state.PSObject.Properties.Match('').Count -gt 0) { $script:RunId = "$($state.RunId)" }
+        if (Test-HasProperty $state 'RunId') { $script:RunId = "$($state.RunId)" }
         Write-Log "Continuation started after restart; attempt $($state.Attempt) of 2."
         Add-OperationalEvent -Level Info -Code 'CONTINUATION_STARTED' `
             -Message "Resumed automatically after restart for verification attempt $($state.Attempt) of 2."
