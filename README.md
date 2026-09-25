@@ -4,6 +4,10 @@ A premium dark-themed Windows utility that **fully disables Hyper-V, VBS (Virtua
 
 Built for Windows PowerShell 5.1 (built into Windows). No dependencies, no install.
 
+### ⬇ [Download the latest version](https://github.com/jestermaxdelta/hyper-v-off-tool/releases/latest)
+
+Grab the `HyperV-Off-Tool-vX.Y.Z.zip` file under **Assets**, extract it, and double-click `Start-HyperV-Off-Console.cmd`.
+
 ---
 
 ## Features
@@ -59,7 +63,7 @@ Built for Windows PowerShell 5.1 (built into Windows). No dependencies, no insta
 
 ### Steps
 
-1. **Extract** everything from `HyperV-Off-Console.zip` into one folder. Keep all files together.
+1. **Download** the ZIP from the [latest release](https://github.com/jestermaxdelta/hyper-v-off-tool/releases/latest) and **extract** everything into one folder. Keep all files together.
 2. **Save your work** and make sure you know the account **password** (the PIN will be disabled).
 3. Double-click **`Start-HyperV-Off-Console.cmd`**.
 4. Approve the **Windows administrator prompt**.
@@ -120,6 +124,9 @@ outputs/
 ├── Start-HyperV-Off-Console.cmd   # Launcher (double-click this)
 ├── HyperV-Off-Console.ps1         # WPF UI + orchestration
 ├── Disable-HyperV-Fully.ps1       # Engine: safety rails + disablement + verification
-├── README-HyperV-Off-Console.md   # Short customer readme (also inside the ZIP)
-└── HyperV-Off-Console.zip         # Ready-to-distribute package
+└── README-HyperV-Off-Console.md   # Short customer readme (README.md inside the ZIP)
 ```
+
+## Publishing a new version
+
+Go to **Actions → Release → Run workflow**, enter a version such as `v1.1.0`, and run it. The workflow builds a customer-only ZIP (launcher, both scripts, and the short readme), publishes it as a GitHub Release with its SHA-256 hash, and marks it as the latest download.

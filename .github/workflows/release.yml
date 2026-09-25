@@ -1,0 +1,74 @@
+name: Release
+
+# Builds a customer-only ZIP and publishes it as a GitHub Release.
+# Run it from the Actions tab ("Run workflow") or by pushing a tag like v1.2.0.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (for example v1.0.0)'
+        required: true
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          version="${{ github.event.inputs.version || github.ref_name }}"
+          echo "tag=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build ZIP
+        id: build
+        run: |
+          name="HyperV-Off-Tool-${{ steps.version.outputs.tag }}"
+          mkdir -p "dist/$name"
+          cp outputs/Start-HyperV-Off-Console.cmd \
+             outputs/HyperV-Off-Console.ps1 \
+             outputs/Disable-HyperV-Fully.ps1 \
+             "dist/$name/"
+          cp outputs/README-HyperV-Off-Console.md "dist/$name/README.md"
+          (cd dist && zip -r -X "$name.zip" "$name")
+          hash=$(sha256sum "dist/$name.zip" | cut -d' ' -f1)
+          echo "zip=dist/$name.zip" >> "$GITHUB_OUTPUT"
+          echo "file=$name.zip" >> "$GITHUB_OUTPUT"
+          echo "sha=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: Write release notes
+        run: |
+          cat > notes.md <<NOTES
+          ## Download
+
+          Download **${{ steps.build.outputs.file }}** below, then:
+
+          1. Extract everything into one folder.
+          2. Save your work and make sure you know your account **password** (the PIN is turned off).
+          3. Double-click **Start-HyperV-Off-Console.cmd** and approve the administrator prompt.
+          4. Click **Turn off Hyper-V**, then click again to confirm.
+
+          The PC may restart up to twice. If a Microsoft confirmation screen appears at boot, press the key shown (commonly **F3**).
+
+          ## Verify the download
+
+          SHA-256: \`${{ steps.build.outputs.sha }}\`
+
+          In PowerShell: \`Get-FileHash .\\${{ steps.build.outputs.file }}\`
+          NOTES
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Hyper-V Off Tool ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          body_path: notes.md
+          files: ${{ steps.build.outputs.zip }}
+          make_latest: true
