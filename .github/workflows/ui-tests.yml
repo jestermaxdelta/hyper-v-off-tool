@@ -1,0 +1,28 @@
+name: Windows UI tests
+
+# Boots the real WPF console on Windows PowerShell 5.1, drives every screen
+# state, runs the engine for real, and uploads screenshots.
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  ui:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run UI and engine tests
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\Invoke-UiTests.ps1
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screens
+          path: ui-screens/
+          if-no-files-found: warn

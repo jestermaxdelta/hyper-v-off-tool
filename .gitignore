@@ -9,3 +9,6 @@ desktop.ini
 # Not part of the project
 AGENTS.md
 *.png
+
+# UI test harness scratch copy
+outputs/.ui-test-host.ps1

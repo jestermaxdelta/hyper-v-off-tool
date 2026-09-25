@@ -995,7 +995,7 @@ function Get-Brush {
     return $script:brushCache[$Hex]
 }
 
-$tone = @{
+$toneColors = @{
     Good    = '#4ADE9B'
     Warn    = '#F5B94F'
     Bad     = '#FF6B81'
@@ -1007,7 +1007,7 @@ $tone = @{
 function Set-Value {
     param($Control, [string] $Text, [ValidateSet('Good','Warn','Bad','Accent','Neutral','Muted')][string] $Tone = 'Neutral')
     $Control.Text = $Text
-    $Control.Foreground = Get-Brush $tone[$Tone]
+    $Control.Foreground = Get-Brush $toneColors[$Tone]
 }
 
 function Set-HeaderPill {
@@ -1329,7 +1329,7 @@ function Read-LiveStatus {
         Disarm-Confirmation
         Set-HeaderPill 'WORKING' 'Accent'
         $LastRunCheck.Text = 'In progress'
-        $LastRunCheck.Foreground = Get-Brush $tone.Accent
+        $LastRunCheck.Foreground = Get-Brush $toneColors.Accent
         if ($script:engineMode -eq 'Verify') {
             $StatusKicker.Text = 'CHECKING'
             $StatusTitle.Text = 'Checking this PC.'
@@ -1352,7 +1352,7 @@ function Read-LiveStatus {
     if ($alreadyOff -or $stateCompleted) {
         Disarm-Confirmation
         $LastRunCheck.Text = if ($stateCompleted) { 'Finished' } elseif ($null -ne $state) { 'Earlier run' } else { 'Never' }
-        $LastRunCheck.Foreground = Get-Brush $(if ($stateCompleted) { $tone.Good } else { $tone.Neutral })
+        $LastRunCheck.Foreground = Get-Brush $(if ($stateCompleted) { $toneColors.Good } else { $toneColors.Neutral })
         if ($alreadyOff) {
             Set-HeaderPill 'OFF' 'Good'
             $StatusKicker.Text = 'ALL CLEAR'
@@ -1394,7 +1394,7 @@ function Read-LiveStatus {
     if ($taskExists) {
         Disarm-Confirmation
         $LastRunCheck.Text = "Restart $attempt of 2"
-        $LastRunCheck.Foreground = Get-Brush $tone.Accent
+        $LastRunCheck.Foreground = Get-Brush $toneColors.Accent
         Set-HeaderPill 'RESTARTING' 'Accent'
         $StatusKicker.Text = 'IN PROGRESS'
         if ($restartPending) {
@@ -1416,7 +1416,7 @@ function Read-LiveStatus {
     if ($null -ne $state -and (Test-HasProperty $state 'Attempt')) {
         # A previous run ended without completing: surface it instead of looking fresh.
         $LastRunCheck.Text = 'Incomplete'
-        $LastRunCheck.Foreground = Get-Brush $tone.Warn
+        $LastRunCheck.Foreground = Get-Brush $toneColors.Warn
         Set-HeaderPill 'ATTENTION' 'Warn'
         $StatusKicker.Text = 'NEEDS ATTENTION'
         $StatusTitle.Text = 'The last run did not finish.'
@@ -1433,7 +1433,7 @@ function Read-LiveStatus {
 
     Set-HeaderPill 'READY' 'Accent'
     $LastRunCheck.Text = if ($null -ne $state) { 'Earlier run' } else { 'Never' }
-    $LastRunCheck.Foreground = Get-Brush $tone.Neutral
+    $LastRunCheck.Foreground = Get-Brush $toneColors.Neutral
     $StatusKicker.Text = 'BEFORE YOU START'
     $StatusTitle.Text = 'Ready to turn off Hyper-V.'
     $StatusSubtitle.Text = 'Nothing changes until you start. Save your work and make sure you know your account password; the PIN will be turned off.'
@@ -1548,7 +1548,7 @@ function Update-DefenderStatusUI {
     Set-Value $DefRtValue "$($d.RealTimeProtection)" $(if ($d.RealTimeProtection -eq 'On') { 'Good' } elseif ($d.RealTimeProtection -eq 'Off') { 'Bad' } else { 'Muted' })
     Set-Value $DefSvcValue "$($d.Service)" $(if ($d.Service -eq 'Running') { 'Good' } elseif ($d.Service -eq 'Stopped') { 'Bad' } else { 'Muted' })
     $DefenderNote.Text = if ($d.TamperOn) { 'Tamper Protection is on right now, so most changes will be blocked.' } else { '' }
-    $DefenderNote.Foreground = Get-Brush $tone.Warn
+    $DefenderNote.Foreground = Get-Brush $toneColors.Warn
     return $d
 }
 
