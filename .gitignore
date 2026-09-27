@@ -10,5 +10,3 @@ desktop.ini
 AGENTS.md
 *.png
 
-# UI test harness scratch copy
-outputs/.ui-test-host.ps1
