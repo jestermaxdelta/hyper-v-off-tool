@@ -311,19 +311,34 @@ try {
     Assert-That (Test-FullyInside $ConfirmStart $window) 'small: confirm button fully visible'
     Close-Sheet
 
-    # 16. Default size (larger than this runner's screen, rendered off-screen)
-    $window.MinWidth = 0; $window.MinHeight = 0
-    $window.Width = 1180
-    $window.Height = 780
+    # 16. Default size. The runner's screen is smaller than the window, so the
+    # content is detached and laid out at 1180 x 780 on its own.
     $content = $window.Content
-    $content.Measure((New-Object Windows.Size 1180, 780))
-    $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
+    $content.Resources = $window.Resources
+    $window.Content = $null
+    function Save-Detached {
+        param([string] $Name)
+        $content.Measure((New-Object Windows.Size 1180, 780))
+        $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
+        $content.UpdateLayout()
+        $bitmap = New-Object Windows.Media.Imaging.RenderTargetBitmap 2360, 1560, 192, 192, ([Windows.Media.PixelFormats]::Pbgra32)
+        $bitmap.Render($content)
+        $encoder = New-Object Windows.Media.Imaging.PngBitmapEncoder
+        $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
+        $stream = [IO.File]::Create((Join-Path $shotDir "$Name.png"))
+        try { $encoder.Save($stream) } finally { $stream.Dispose() }
+        Write-Host "shot: $Name.png (detached 1180 x 780 @2x)"
+    }
+    Show-Page -Name 'Home'
     Set-Scenario (New-Snap)
-    $content.Measure((New-Object Windows.Size 1180, 780)); $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
-    Save-Shot '16-large-ready@2x' 2
+    Wait-Ui 300
+    Save-Detached '16-large-ready@2x'
     Set-Scenario (New-Snap -Engine) $state1 $runEvents
-    $content.Measure((New-Object Windows.Size 1180, 780)); $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
-    Save-Shot '16b-large-working@2x' 2
+    Wait-Ui 300
+    Save-Detached '16b-large-working@2x'
+    Set-Scenario (New-Snap -Hypervisor $false -Vbs 0 -Cg $false -Hvci $false) $doneState $doneEvents
+    Wait-Ui 300
+    Save-Detached '16c-large-done@2x'
 }
 catch {
     Assert-That $false ("scenario crashed: {0} at {1}" -f $_.Exception.Message, $_.InvocationInfo.PositionMessage)
