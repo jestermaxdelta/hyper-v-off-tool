@@ -1,0 +1,31 @@
+name: UI preview (temporary)
+
+# TEMPORARY: renders every screen of the rebuilt console on real Windows for
+# review. Removed before merge.
+on:
+  push:
+    branches: ['claude/loving-carson-brgxt4']
+    paths: ['outputs/**', '.github/ui-preview/**', '.github/workflows/ui-preview.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render UI states
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .github\ui-preview\Invoke-UiPreview.ps1
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screens
+          path: ui-screens/
+          retention-days: 3
+          if-no-files-found: warn
