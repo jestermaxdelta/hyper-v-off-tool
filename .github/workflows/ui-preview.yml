@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Use a 1080p screen
+        shell: powershell
+        continue-on-error: true
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
       - name: Render UI states
         shell: powershell
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .github\ui-preview\Invoke-UiPreview.ps1

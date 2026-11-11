@@ -1469,6 +1469,7 @@ $script:overlay = ''
 $script:primaryAction = 'None'
 $script:reopenArmedThisSession = $false
 $script:reopenCleared = $false
+$script:resumeReopenCleared = $false
 $script:toastTimer = $null
 $script:brushCache = @{}
 
@@ -2761,10 +2762,12 @@ function Update-ResumeReopen {
     $stillWorking = ($null -ne $state) -and -not ((Test-HasProperty $state 'Completed') -and [bool]$state.Completed)
     if ($stillWorking -and $script:snapshot.TaskExists) {
         if (-not $script:reopenArmedThisSession) { Set-ReopenAfterSignIn; $script:reopenArmedThisSession = $true }
+        $script:resumeReopenCleared = $false
     }
-    elseif ($script:reopenArmedThisSession -or -not $stillWorking) {
+    elseif (-not $script:resumeReopenCleared) {
         Remove-StartupReopen
         $script:reopenArmedThisSession = $false
+        $script:resumeReopenCleared = $true
     }
 }
 
