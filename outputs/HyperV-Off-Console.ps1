@@ -1582,9 +1582,10 @@ function Start-ColorTransition {
 $script:toneBrush = New-Object Windows.Media.SolidColorBrush (Get-Color $heroToneColors.Neutral)
 $script:toneDimBrush = New-Object Windows.Media.SolidColorBrush (Get-Color $heroToneColors.Neutral 110)
 $script:toneFaintBrush = New-Object Windows.Media.SolidColorBrush (Get-Color $heroToneColors.Neutral 34)
-$window.Resources['HeroTone'] = $script:toneBrush
-$window.Resources['HeroToneDim'] = $script:toneDimBrush
-$window.Resources['HeroToneFaint'] = $script:toneFaintBrush
+# The indexer takes [object], so pass the raw brush rather than PowerShell's wrapper.
+$window.Resources['HeroTone'] = $script:toneBrush.PSObject.BaseObject
+$window.Resources['HeroToneDim'] = $script:toneDimBrush.PSObject.BaseObject
+$window.Resources['HeroToneFaint'] = $script:toneFaintBrush.PSObject.BaseObject
 
 # Soft radial glows (cheaper than blur effects) that follow the same tone.
 $script:orbGlowStop = New-Object Windows.Media.GradientStop((Get-Color $heroToneColors.Neutral 70), 0.0)
@@ -3169,7 +3170,7 @@ $window.Add_StateChanged({
     $maximized = ($window.WindowState -eq [Windows.WindowState]::Maximized)
     # A maximized WindowChrome window overhangs the screen by the frame width.
     $RootBorder.Margin = if ($maximized) { New-Object Windows.Thickness 7 } else { New-Object Windows.Thickness 0 }
-    $MaximizeButton.Content = if ($maximized) { $glyph.Restore } else { $glyph.Max }
+    $MaximizeButton.Content = [string]$(if ($maximized) { $glyph.Restore } else { $glyph.Max })
     $MaximizeButton.ToolTip = if ($maximized) { 'Restore' } else { 'Maximize' }
 })
 
