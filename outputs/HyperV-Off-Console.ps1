@@ -731,7 +731,7 @@ $xamlText = @'
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*"/>
               <ColumnDefinition Width="16"/>
-              <ColumnDefinition Width="320"/>
+              <ColumnDefinition Width="304"/>
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" CornerRadius="20" Background="{StaticResource HeroFill}" BorderBrush="{StaticResource HeroStroke}" BorderThickness="1" ClipToBounds="True">
@@ -751,75 +751,81 @@ $xamlText = @'
                 </Border>
 
                 <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,4,0">
-                  <Grid Margin="30,28,26,20">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="Auto"/>
-                      <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                  <Grid Margin="28,22,24,18">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto"/>
+                      <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                      </Grid.ColumnDefinitions>
 
-                    <!-- Status orb: glows while Hyper-V is on, spins while working, settles green when off. -->
-                    <Grid Width="184" Height="184" VerticalAlignment="Top" Margin="0,2,30,0" IsHitTestVisible="False">
-                      <Ellipse x:Name="OrbGlow" Width="184" Height="184" Opacity="0.9"/>
-                      <Ellipse Width="176" Height="176" Stroke="#24FFFFFF" StrokeThickness="1" StrokeDashArray="1 5"/>
-                      <Ellipse Width="148" Height="148" Stroke="#2A2032" StrokeThickness="3"/>
-                      <Ellipse x:Name="OrbRingFull" Width="148" Height="148" Stroke="{DynamicResource HeroToneDim}" StrokeThickness="3"/>
-                      <Path x:Name="OrbArc" Width="148" Height="148" Stretch="None" Stroke="{DynamicResource HeroTone}" StrokeThickness="3"
-                            StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M 74,1.5 A 72.5,72.5 0 0 1 146.5,74"
-                            RenderTransformOrigin="0.5,0.5" Visibility="Collapsed">
-                        <Path.RenderTransform><RotateTransform Angle="0"/></Path.RenderTransform>
-                      </Path>
-                      <Ellipse Width="112" Height="112" Fill="{StaticResource OrbCoreFill}" Stroke="{DynamicResource HeroToneDim}" StrokeThickness="1"/>
-                      <TextBlock x:Name="OrbGlyph" Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="38" Foreground="{DynamicResource HeroTone}"
-                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      <!-- Status orb: glows while Hyper-V is on, spins while working, settles green when off. -->
+                      <Grid Width="148" Height="148" VerticalAlignment="Top" Margin="-6,-4,22,0" IsHitTestVisible="False">
+                        <Ellipse x:Name="OrbGlow" Width="148" Height="148" Opacity="0.9"/>
+                        <Ellipse Width="140" Height="140" Stroke="#24FFFFFF" StrokeThickness="1" StrokeDashArray="1 5"/>
+                        <Ellipse Width="116" Height="116" Stroke="#2A2032" StrokeThickness="3"/>
+                        <Ellipse x:Name="OrbRingFull" Width="116" Height="116" Stroke="{DynamicResource HeroToneDim}" StrokeThickness="3"/>
+                        <Path x:Name="OrbArc" Width="116" Height="116" Stretch="None" Stroke="{DynamicResource HeroTone}" StrokeThickness="3"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M 58,1.5 A 56.5,56.5 0 0 1 114.5,58"
+                              RenderTransformOrigin="0.5,0.5" Visibility="Collapsed">
+                          <Path.RenderTransform><RotateTransform Angle="0"/></Path.RenderTransform>
+                        </Path>
+                        <Ellipse Width="88" Height="88" Fill="{StaticResource OrbCoreFill}" Stroke="{DynamicResource HeroToneDim}" StrokeThickness="1"/>
+                        <TextBlock x:Name="OrbGlyph" Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="30" Foreground="{DynamicResource HeroTone}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Grid>
+
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,0,4">
+                        <Grid>
+                          <TextBlock x:Name="StatusKicker" Text="ONE MOMENT" Style="{StaticResource Kicker}" Foreground="{DynamicResource HeroTone}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                          <Border x:Name="StatusPill" Style="{StaticResource Chip}" Background="{DynamicResource HeroToneFaint}" BorderBrush="{DynamicResource HeroToneDim}" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal">
+                              <Ellipse Width="7" Height="7" Fill="{DynamicResource HeroTone}" VerticalAlignment="Center"/>
+                              <TextBlock x:Name="StatusPillText" Text="CHECKING" Foreground="#F4EEF8" FontSize="10.5" FontWeight="Bold" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                          </Border>
+                        </Grid>
+                        <TextBlock x:Name="StatusTitle" Text="Checking this PC..." Style="{StaticResource PageTitle}" FontSize="31" Margin="0,8,0,0" TextWrapping="Wrap" LineHeight="37"/>
+                        <TextBlock x:Name="StatusSubtitle" Text="Reading the current Hyper-V and security settings. Nothing is changed."
+                                   Foreground="{StaticResource TextSecondary}" FontSize="13.5" TextWrapping="Wrap" Margin="0,7,0,0" MaxWidth="620" HorizontalAlignment="Left" LineHeight="21"/>
+                      </StackPanel>
                     </Grid>
 
-                    <StackPanel Grid.Column="1">
-                      <Grid>
-                        <TextBlock x:Name="StatusKicker" Text="ONE MOMENT" Style="{StaticResource Kicker}" Foreground="{DynamicResource HeroTone}" VerticalAlignment="Center"/>
-                        <Border x:Name="StatusPill" Style="{StaticResource Chip}" Background="{DynamicResource HeroToneFaint}" BorderBrush="{DynamicResource HeroToneDim}" HorizontalAlignment="Right">
-                          <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource HeroTone}" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="StatusPillText" Text="CHECKING" Foreground="#F4EEF8" FontSize="10.5" FontWeight="Bold" Margin="7,0,0,0" VerticalAlignment="Center"/>
-                          </StackPanel>
-                        </Border>
-                      </Grid>
-                      <TextBlock x:Name="StatusTitle" Text="Checking this PC..." Style="{StaticResource PageTitle}" FontSize="34" Margin="0,10,0,0" TextWrapping="Wrap" LineHeight="40"/>
-                      <TextBlock x:Name="StatusSubtitle" Text="Reading the current Hyper-V and security settings. Nothing is changed."
-                                 Foreground="{StaticResource TextSecondary}" FontSize="13.5" TextWrapping="Wrap" Margin="0,8,0,0" MaxWidth="600" HorizontalAlignment="Left" LineHeight="21"/>
-
-                      <Border x:Name="GuideCard" CornerRadius="16" Background="#A60C0910" BorderBrush="#2A1F33" BorderThickness="1" Padding="20,16,20,8" Margin="0,22,0,0">
-                        <StackPanel>
-                          <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE8FB;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="{DynamicResource HeroTone}" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="GuideHeader" Text="WHAT TO DO NOW" Style="{StaticResource Section}" Foreground="#B8ACC4" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                          </StackPanel>
-                          <ItemsControl x:Name="GuideList" Margin="0,14,0,0" Focusable="False">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate>
-                                <Grid Margin="0,0,0,12">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                  </Grid.ColumnDefinitions>
-                                  <Border Width="24" Height="24" CornerRadius="12" Background="{Binding BadgeBackground}" BorderBrush="{Binding BadgeStroke}" BorderThickness="1" VerticalAlignment="Top">
-                                    <TextBlock Text="{Binding Index}" FontSize="11" FontWeight="Bold" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                  </Border>
-                                  <StackPanel Grid.Column="1" Margin="13,2,0,0">
-                                    <TextBlock Text="{Binding Text}" Foreground="#F1EAF6" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="19"/>
-                                    <TextBlock Text="{Binding Detail}" Visibility="{Binding DetailVisibility}" Foreground="#9A8EA6" FontSize="12" TextWrapping="Wrap" LineHeight="18" Margin="0,2,0,0"/>
-                                  </StackPanel>
-                                </Grid>
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
+                    <Border x:Name="GuideCard" Grid.Row="1" CornerRadius="16" Background="#A60C0910" BorderBrush="#2A1F33" BorderThickness="1" Padding="20,15,20,6" Margin="0,18,0,0">
+                      <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="&#xE8FB;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="{DynamicResource HeroTone}" VerticalAlignment="Center"/>
+                          <TextBlock x:Name="GuideHeader" Text="WHAT TO DO NOW" Style="{StaticResource Section}" Foreground="#B8ACC4" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
-                      </Border>
-                    </StackPanel>
+                        <ItemsControl x:Name="GuideList" Margin="0,13,0,0" Focusable="False">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Grid Margin="0,0,0,11">
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="Auto"/>
+                                  <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="24" Height="24" CornerRadius="12" Background="{Binding BadgeBackground}" BorderBrush="{Binding BadgeStroke}" BorderThickness="1" VerticalAlignment="Top">
+                                  <TextBlock Text="{Binding Index}" FontSize="11" FontWeight="Bold" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="13,2,0,0">
+                                  <TextBlock Text="{Binding Text}" Foreground="#F1EAF6" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="19"/>
+                                  <TextBlock Text="{Binding Detail}" Visibility="{Binding DetailVisibility}" Foreground="#9A8EA6" FontSize="12" TextWrapping="Wrap" LineHeight="18" Margin="0,1,0,0"/>
+                                </StackPanel>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </Border>
                   </Grid>
                 </ScrollViewer>
 
                 <!-- Journey -->
-                <Border Grid.Row="1" BorderBrush="#1F1726" BorderThickness="0,1,0,0" Background="#4D07050A" Padding="22,18,22,12">
+                <Border Grid.Row="1" BorderBrush="#1F1726" BorderThickness="0,1,0,0" Background="#4D07050A" Padding="22,15,22,10">
                   <StackPanel>
                     <Grid>
                       <Grid.ColumnDefinitions>
@@ -890,7 +896,7 @@ $xamlText = @'
                       </Grid>
                     </Grid>
 
-                    <Button x:Name="LatestButton" Style="{StaticResource LinkButton}" HorizontalContentAlignment="Stretch" Margin="-2,12,-2,0" Visibility="Collapsed" ToolTip="Open the Activity page">
+                    <Button x:Name="LatestButton" Style="{StaticResource LinkButton}" HorizontalContentAlignment="Stretch" Margin="-2,8,-2,0" Visibility="Collapsed" ToolTip="Open the Activity page">
                       <Grid>
                         <Grid.ColumnDefinitions>
                           <ColumnDefinition Width="Auto"/>
@@ -924,7 +930,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
 
-                    <Grid Height="40" ToolTip="The Microsoft virtualization layer that Hyper-V, VBS and WSL 2 run on.">
+                    <Grid Height="37" ToolTip="The Microsoft virtualization layer that Hyper-V, VBS and WSL 2 run on.">
                       <TextBlock Text="Hypervisor" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="HvDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -932,7 +938,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
                     <Rectangle Height="1" Fill="{StaticResource Divider}"/>
-                    <Grid Height="40" ToolTip="Virtualization-based security: runs parts of Windows inside the hypervisor.">
+                    <Grid Height="37" ToolTip="Virtualization-based security: runs parts of Windows inside the hypervisor.">
                       <TextBlock Text="VBS" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="VbsDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -940,7 +946,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
                     <Rectangle Height="1" Fill="{StaticResource Divider}"/>
-                    <Grid Height="40" ToolTip="Protects sign-in secrets using VBS.">
+                    <Grid Height="37" ToolTip="Protects sign-in secrets using VBS.">
                       <TextBlock Text="Credential Guard" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="CgDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -948,7 +954,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
                     <Rectangle Height="1" Fill="{StaticResource Divider}"/>
-                    <Grid Height="40" ToolTip="Also called HVCI or Core isolation. Uses VBS to check drivers.">
+                    <Grid Height="37" ToolTip="Also called HVCI or Core isolation. Uses VBS to check drivers.">
                       <TextBlock Text="Memory Integrity" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="HvciDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -956,7 +962,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
                     <Rectangle Height="1" Fill="{StaticResource Divider}"/>
-                    <Grid Height="40" ToolTip="If BitLocker is on, it is paused for at most two restarts and then turned back on automatically.">
+                    <Grid Height="37" ToolTip="If BitLocker is on, it is paused for at most two restarts and then turned back on automatically.">
                       <TextBlock Text="BitLocker" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="BitLockerDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -964,7 +970,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
                     <Rectangle Height="1" Fill="{StaticResource Divider}"/>
-                    <Grid Height="40" ToolTip="Work or school PCs can have policies that turn VBS back on.">
+                    <Grid Height="37" ToolTip="Work or school PCs can have policies that turn VBS back on.">
                       <TextBlock Text="Managed by" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="ManagedDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -972,7 +978,7 @@ $xamlText = @'
                       </StackPanel>
                     </Grid>
                     <Rectangle Height="1" Fill="{StaticResource Divider}"/>
-                    <Grid Height="40">
+                    <Grid Height="37">
                       <TextBlock Text="Last run" Style="{StaticResource RowLabel}"/>
                       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Ellipse x:Name="LastRunDot" Width="7" Height="7" Fill="#62586C" VerticalAlignment="Center"/>
@@ -1818,7 +1824,7 @@ function Open-Confirm {
     if (Test-EngineBusy) { return }
     $AckSaved.IsChecked = $false
     $AckPassword.IsChecked = $false
-    $ConfirmTitle.Text = "Turn off Hyper-V on $env:COMPUTERNAME?"
+    $ConfirmTitle.Text = "Turn off Hyper-V on $($env:COMPUTERNAME)?"
     Update-Preflight
     Update-ConfirmButton
     Open-Sheet -Name 'Confirm'
@@ -2489,7 +2495,7 @@ function Get-ViewModel {
             (New-Guide 'Then click Run again.' 'The safety checks run again before anything changes.' 'Accent')
         )
         $vm.FooterTitle = 'Something is still switched on.'
-        $vm.FooterSubtitle = 'Fix the item on the left, then run it again.'
+        $vm.FooterSubtitle = 'Fix the item named on the Home page, then run it again.'
         $vm.PrimaryText = 'Run again'; $vm.PrimaryEnabled = $true; $vm.PrimaryAction = 'Confirm'
         return $vm
     }
@@ -2507,7 +2513,7 @@ function Get-ViewModel {
             (New-Guide 'Then click Try again.' 'The safety checks run again before anything changes.' 'Accent')
         )
         $vm.FooterTitle = 'The last attempt stopped early.'
-        $vm.FooterSubtitle = 'Fix the item on the left, then try again.'
+        $vm.FooterSubtitle = 'Fix the item named on the Home page, then try again.'
         $vm.PrimaryText = 'Try again'; $vm.PrimaryEnabled = $true; $vm.PrimaryAction = 'Confirm'
         return $vm
     }
@@ -2542,7 +2548,7 @@ function Get-ViewModel {
     [void]$guide.Add((New-Guide 'Click Turn off Hyper-V.' 'You confirm on the next screen before anything changes.' 'Accent'))
     $vm.Guide = @($guide)
     $vm.FooterTitle = 'Nothing has been changed yet.'
-    $vm.FooterSubtitle = 'Follow the steps above, then click Turn off Hyper-V.'
+    $vm.FooterSubtitle = 'Follow What to do now on the Home page, then click Turn off Hyper-V.'
     $vm.PrimaryEnabled = $true; $vm.PrimaryAction = 'Confirm'
     return $vm
 }
@@ -2690,7 +2696,7 @@ function Update-View {
     $FooterGlyph.Text = $vm.Glyph
     $StatusPillText.Text = $vm.Pill
     $StatusKicker.Text = $vm.Kicker
-    $StatusTitle.Text = $vm.Title
+    $StatusTitle.Text = $vm.Title.Replace('Hyper-V', "Hyper$([char]0x2011)V")
     $StatusSubtitle.Text = $vm.Subtitle
     $GuideHeader.Text = $vm.GuideTitle
     Set-Guide $vm.Guide

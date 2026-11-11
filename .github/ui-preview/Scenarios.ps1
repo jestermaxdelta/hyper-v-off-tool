@@ -310,6 +310,20 @@ try {
     Save-Shot '15c-small-confirm'
     Assert-That (Test-FullyInside $ConfirmStart $window) 'small: confirm button fully visible'
     Close-Sheet
+
+    # 16. Default size (larger than this runner's screen, rendered off-screen)
+    $window.MinWidth = 0; $window.MinHeight = 0
+    $window.Width = 1180
+    $window.Height = 780
+    $content = $window.Content
+    $content.Measure((New-Object Windows.Size 1180, 780))
+    $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
+    Set-Scenario (New-Snap)
+    $content.Measure((New-Object Windows.Size 1180, 780)); $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
+    Save-Shot '16-large-ready@2x' 2
+    Set-Scenario (New-Snap -Engine) $state1 $runEvents
+    $content.Measure((New-Object Windows.Size 1180, 780)); $content.Arrange((New-Object Windows.Rect 0, 0, 1180, 780))
+    Save-Shot '16b-large-working@2x' 2
 }
 catch {
     Assert-That $false ("scenario crashed: {0} at {1}" -f $_.Exception.Message, $_.InvocationInfo.PositionMessage)
