@@ -6,7 +6,7 @@ Built for Windows PowerShell 5.1 (built into Windows). No dependencies, no insta
 
 ### ⬇ [Download the latest version](https://github.com/jestermaxdelta/hyper-v-off-tool/releases/latest)
 
-Grab the `HyperV-Off-Tool-vX.Y.Z.zip` file under **Assets**, extract it, and double-click `Start-HyperV-Off-Console.cmd`.
+Grab the `HyperV-Off-Tool-vX.Y.Z.zip` file under **Assets**, extract it (right-click → **Extract All**), and double-click `Start-HyperV-Off-Console.cmd`.
 
 ---
 
@@ -17,7 +17,7 @@ Grab the `HyperV-Off-Tool-vX.Y.Z.zip` file under **Assets**, extract it, and dou
 - **Windows features removed** — Hyper-V, Virtual Machine Platform, Hypervisor Platform, Windows Sandbox, Application Guard, Isolated User Mode, and WSL 2's hypervisor dependency.
 - **VBS / Credential Guard / HVCI / System Guard / Kernel Shadow Stacks** — explicit off values written to both policy and configuration registry locations.
 - **UEFI firmware lock removal** — stages Microsoft's own `SecConfig.efi` opt-out flow (the same one the DG Readiness tool uses) so firmware-locked VBS policies can be cleared. Requires pressing the key shown on screen at boot (commonly **F3**).
-- **Windows Server support** — removes the Hyper-V role when run on Server SKUs.
+- **Windows Server is detected up front** — Server has no System Restore, so the window explains this and blocks the run before anything changes (the read-only check still works).
 
 ### Windows Hello PIN removal
 - Windows Hello PINs are TPM-sealed to boot measurements. Disabling VBS/Secure Launch changes those measurements, which causes the blue **"Something happened and your PIN isn't available"** lockout screen.
@@ -35,9 +35,10 @@ Grab the `HyperV-Off-Tool-vX.Y.Z.zip` file under **Assets**, extract it, and dou
 - **Already-off detection** — if Hyper-V and VBS are already disabled, the tool says so, changes nothing, and removes itself from sign-in startup.
 - **Self-cleaning startup** — the "reopen after restart" option only persists while work is genuinely in progress; it deletes itself the moment Hyper-V is confirmed off.
 - **Honest failure states** — a run that stopped early shows as *Needs attention* with a specific fix in the Log, never a fake success.
-- **Double-run protection** — the Run button locks while the engine is working or a continuation task exists.
+- **Double-run protection** — only one window can be open, and the Run button locks while the engine is working (including a run started by an earlier window) or a continuation task exists.
 
-### Testing page (not shown to customers)
+### Testing page (hidden from customers)
+Hidden by default. Start the console with `-Testing`, or press **Ctrl+Shift+T** in the window.
 - Native **Windows Security control** that replaces tools like Sordum Defender Control:
   - *Disable* — Defender policy keys, real-time protection off, `WinDefend`/`WdNisSvc`/`WdFilter`/`WdBoot` services stopped and disabled, Security Health tray removed.
   - *Restore* — reverses everything using service start values saved before any change.
@@ -45,31 +46,37 @@ Grab the `HyperV-Off-Tool-vX.Y.Z.zip` file under **Assets**, extract it, and dou
 - If **Tamper Protection** is ON, Windows blocks most changes — the tool detects this and tells you, instead of pretending.
 
 ### UI
-- Custom WPF theme matched to illusion.cx: aubergine-black canvas with a fuchsia-to-violet glow, heavy display headings, glowing gradient CTA, animated toggles, dark scrollbars and tooltips.
-- **Live progress stepper** (Back up → Turn off → Restart → Verify) that follows the real engine state, plus a colour-coded status pill.
-- **Safer confirm**: the first click opens a confirmation card on Options with a 12-second window; *Cancel* or **Esc** backs out.
-- **Cancel restart** button appears during the 30-second restart warning (runs `shutdown /a`; the tool carries on after your next manual restart).
-- Log shows newest first, with icons, a failure badge in the sidebar, and filter-aware empty states. *Final report* opens `Final-Status.txt` directly.
-- Live status: hypervisor, VBS, domain management, and last-run state, refreshed every 2 seconds.
+- Custom WPF theme matched to illusion.cx: aubergine-black canvas with a fuchsia-to-violet glow, heavy display headings and a glowing gradient call to action. Native window frame (snap, resize, Windows 11 rounded corners and shadow).
+- **Status orb** that glows while Hyper-V is on, spins while work runs, and settles green when everything is off. The whole hero tints to match the state.
+- **What to do now** — a numbered checklist that changes with every state: what to prepare before starting, what to expect during the restart (including the F3 firmware prompt only when it was staged), and the exact fix from the log when something stopped early.
+- **Journey stepper** (Back up → Turn off → Restart → Verify) driven by the real engine events, with the current sub-step (restore point, Windows features, boot settings…) and a *Latest* line.
+- **Confirm sheet**: tick *I have saved my work* and *I know my password* to enable the run. Shows what will stop working, pre-flight warnings (on battery, low disk space, BitLocker, managed PC) and the run options. **Esc** or a click outside backs out.
+- **Action bar** on every page: one primary button that always does the next right thing (*Turn off Hyper-V*, *Restart now*, *Try again*, *Close*…), plus *Check this PC* (F5) and *Cancel restart* during the 30-second warning.
+- **Activity** timeline, newest first, with *All / Needs attention / Failed* filters, a failure badge, *Copy for support*, *Log folder* and *Final report*.
+- **Help** sheet (F1): what changes, the F3 screen, why the PIN is gone, how to undo with System Restore (with a button to open it).
+- Live check: hypervisor, VBS, Credential Guard, Memory Integrity, BitLocker, management and last run.
+- Respects *Show animations in Windows* and drops continuous animation under software rendering (for example Remote Desktop).
+
+### Efficiency and robustness
+- All Windows queries (CIM, scheduled task, Defender, battery, BitLocker) run on a background runspace, so the window never stalls.
+- The event log is read incrementally (only new bytes) with shared file access, so the engine can always write to it.
+- Single-instance window, hidden console, a clear message if the administrator prompt is declined or files were not extracted, and a crash guard that logs to `Console-UI.log` instead of closing.
 
 ---
 
 ## Setup guide
 
 ### Requirements
-- Windows 10 1903+ or Windows 11 (client), or Windows Server
+- Windows 10 1903+ or Windows 11 (Windows Server is not supported: it has no System Restore)
 - Windows PowerShell 5.1 (built in — no installs needed)
 - Administrator rights (the tool requests elevation itself)
 
 ### Steps
 
 1. **Download** the ZIP from the [latest release](https://github.com/jestermaxdelta/hyper-v-off-tool/releases/latest) and **extract** everything into one folder. Keep all files together.
-2. **Save your work** and make sure you know the account **password** (the PIN will be disabled).
-3. Double-click **`Start-HyperV-Off-Console.cmd`**.
-4. Approve the **Windows administrator prompt**.
-5. Review the **Overview** page to confirm what is currently running.
-6. Check **Options** (restart behavior, firmware opt-out, reopen-after-restart).
-7. Click **Turn off Hyper-V**, then click again to confirm.
+2. Double-click **`Start-HyperV-Off-Console.cmd`** and approve the **Windows administrator prompt**.
+3. Follow **What to do now** on the Home page (save your work, know your account **password** — the PIN will be disabled).
+4. Click **Turn off Hyper-V**, tick the two confirmations, review the options, and click **Turn off Hyper-V** again.
 
 ### What happens next
 - A restore point is created and verified; settings are backed up; BitLocker is briefly suspended.
@@ -91,8 +98,9 @@ Everything is kept in `C:\ProgramData\Disable-HyperV-Fully`:
 | `Final-Status.txt` | Whether everything is off + anything left over |
 | `Backup-*\` | BCD, registry, and feature baselines |
 | `SecurityToggle-Backup.json` | Original Defender service start values (Testing page) |
+| `Console-UI.log` | Only written if the window itself hits an unexpected error |
 
-The Log page has filters for **All / Needs attention / Failed**, and every failure entry includes what to do next.
+The Activity page has filters for **All / Needs attention / Failed**, every failure entry includes what to do next, and **Copy for support** puts the status and recent activity on the clipboard.
 
 ---
 
@@ -129,4 +137,4 @@ outputs/
 
 ## Publishing a new version
 
-Go to **Actions → Release → Run workflow**, enter a version such as `v1.1.0`, and run it. The workflow builds a customer-only ZIP (launcher, both scripts, and the short readme), publishes it as a GitHub Release with its SHA-256 hash, and marks it as the latest download.
+Go to **Actions → Release → Run workflow**, enter a version such as `v2.0.0` (format `vX.Y.Z`), and run it. The workflow builds a customer-only ZIP (launcher, both scripts, and the short readme), stamps the version into the app (shown in Help and in *Copy for support*), publishes it as a GitHub Release with its SHA-256 hash, and marks it as the latest download.
